@@ -54,7 +54,6 @@ public class LoginService {
             // แปลง input เป็น JSON
             ObjectMapper mapper = new ObjectMapper();
             String jsonInputString = mapper.writeValueAsString(loginRequest);
-            System.out.println(jsonInputString);
             // แปลง string เป็น byte
             byte[] postData = jsonInputString.getBytes(StandardCharsets.UTF_8);
 
@@ -65,7 +64,6 @@ public class LoginService {
 
             // อ่านการตอบกลับ
             int responseCode = connection.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
 
             // อ่านข้อมูลการตอบกลับ
             BufferedReader reader;
@@ -85,9 +83,6 @@ public class LoginService {
 
             // ปิดการเชื่อมต่อ
             connection.disconnect();
-
-            // พิมพ์ผลลัพธ์
-            System.out.println("Response: " + response.toString());
 
             // แปลง response เป็น JSON
             JSONObject jsonResponse = new JSONObject(response.toString());

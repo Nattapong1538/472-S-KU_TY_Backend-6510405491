@@ -1,9 +1,6 @@
 package a4.KU_TY_backend.KU_TY_backend.service;
 
-import a4.KU_TY_backend.KU_TY_backend.entity.Event;
-import a4.KU_TY_backend.KU_TY_backend.entity.EventUser;
-import a4.KU_TY_backend.KU_TY_backend.entity.EventUserKey;
-import a4.KU_TY_backend.KU_TY_backend.entity.User;
+import a4.KU_TY_backend.KU_TY_backend.entity.*;
 import a4.KU_TY_backend.KU_TY_backend.exception.ConflictException;
 import a4.KU_TY_backend.KU_TY_backend.exception.NotFoundException;
 import a4.KU_TY_backend.KU_TY_backend.exception.SystemException;
@@ -119,11 +116,27 @@ public class UserService {
         event.setAttendeeCount(event.getAttendeeCount() - 1);
         eventRepository.save(event);
     }
-    public UserResponse updateImage(UUID userId, String imageUrl){;
+    public void kickFromEvent(KickFromEventRequest request){
+        UUID ownerId = request.getOwnerId();
+        UUID eventId = request.getEventId();
+        UUID participantId = request.getParticipantId();
+        validator.userIdValidate(ownerId);
+        validator.userIdValidate(participantId);
+        validator.eventIdValidate(eventId);
+        Event event = eventRepository.findById(eventId).get();
+        User owner = userRepository.findById(ownerId).get();
+        if(!event.getCreatedBy().equals(owner)) throw new NotFoundException("You are not owner");
+        EventUser eventUser = eventUserRepository.findById(new EventUserKey(eventId, participantId)).orElseThrow(()-> new NotFoundException("User not in event"));
+        eventUserRepository.delete(eventUser);
+        event.setAttendeeCount(event.getAttendeeCount() - 1);
+        eventRepository.save(event);
+    }
+    public UserResponse updateImage(UUID userId, String imageUrl){
         validator.userIdValidate(userId);
         User user = userRepository.findById(userId).get();
         user.setImageUrl(imageUrl);
         return userRepository.save(user).toResponse();
     }
+
 
 }

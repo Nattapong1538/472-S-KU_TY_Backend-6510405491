@@ -39,6 +39,9 @@ public class User {
     @JsonIgnore
     private List<EventUser> joinedEventList;
     private String imageUrl;
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<Feedback> givedFeedbackList;
 
     public UserResponse toResponse(){
         UserResponse response = new UserResponse();

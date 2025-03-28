@@ -1,0 +1,83 @@
+name: CI/CD Workflow
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  develop-workflow:
+    if: github.ref == 'refs/heads/develop' || github.event.pull_request.base.ref == 'develop'
+    name: Develop - Test & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Run Tests (Maven/Gradle)
+        run: |
+          mvn clean verify
+
+      - name: Set up Docker Compose
+        run: |
+          sudo apt-get install docker-compose
+
+      - name: Build Docker Image with Docker Compose
+        run: |
+          docker-compose build
+
+  main-workflow:
+    if: github.ref == 'refs/heads/main'
+    name: Main - Build, Push & Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        run: |
+          sudo apt-get install docker-compose
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Generate Semantic Version
+        id: versioning
+        run: |
+          VERSION=$(date +'%Y.%m.%d-%H%M%S')
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "DOCKER_TAG=$VERSION" >> $GITHUB_ENV
+
+      - name: Build and Push Docker Image with Docker Compose
+        run: |
+          docker-compose build
+          docker tag kuty-backend:latest ${{ secrets.DOCKER_HUB_USERNAME }}/kuty-backend:${{ env.DOCKER_TAG }}
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/kuty-backend:${{ env.DOCKER_TAG }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.RELEASE_VERSION }}
+          name: Release v${{ env.RELEASE_VERSION }}
+          body: |
+            Automated release
+            - Docker Image: ${{ secrets.DOCKER_HUB_USERNAME }}/kuty-backend:${{ env.DOCKER_TAG }}
+          draft: false
+          prerelease: false

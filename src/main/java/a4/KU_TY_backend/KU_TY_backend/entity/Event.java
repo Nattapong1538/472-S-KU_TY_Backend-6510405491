@@ -43,6 +43,10 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "type_id")
     private EventType eventType;
+    @OneToMany(mappedBy = "event",cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnore
+    private List<Feedback> feedbackList;
+
     public EventResponse toResponse() {
         EventResponse dto = new EventResponse();
         dto.setEventId(eventId);
